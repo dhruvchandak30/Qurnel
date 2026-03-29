@@ -1,13 +1,31 @@
-import { Redis } from '@upstash/redis'
+import { Redis } from '@upstash/redis';
+
 type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
 
+const JOB_TYPES = [
+    'email-send',
+    'sms-send',
+    'report-gen',
+    'image-resize',
+    'data-export',
+    'invoice-gen',
+    'notification-push',
+];
+
+interface Payload {
+    priority: Priority;
+    timeToProcess: number;
+    jobType: string;
+    data: Record<string, unknown>;
+}
 
 export class RedisManager {
     redis: Redis;
+
     constructor() {
         this.redis = new Redis({
-            url: process.env.REDIS_REST_URL,
-            token: process.env.REDIS_REST_TOKEN,
+            url: process.env.REDIS_REST_URL!,
+            token: process.env.REDIS_REST_TOKEN!,
         });
     }
 
@@ -18,19 +36,22 @@ export class RedisManager {
         );
     }
 
-    // async pop(priority: Priority) {
-    //     return await this.redis.rpop(`queue:${priority.toLowerCase()}`, 1);
-    // }
     async pop() {
         const job =
             (await this.redis.rpop('queue:high')) ??
             (await this.redis.rpop('queue:medium')) ??
             (await this.redis.rpop('queue:low'));
-
-        return job;
+        return (job as unknown as Payload) ?? null;
     }
 
     async length(priority: Priority) {
         return await this.redis.llen(`queue:${priority.toLowerCase()}`);
+    }
+
+    async getAllLengths() {
+        const high   = await this.redis.llen('queue:high')
+        const medium = await this.redis.llen('queue:medium')
+        const low    = await this.redis.llen('queue:low')
+        return { high, medium, low }
     }
 }

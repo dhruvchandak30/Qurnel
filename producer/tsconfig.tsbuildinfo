@@ -1,1 +1,1 @@
-{"root":["./src/populatedatainredis.ts","./src/redis.ts","./src/index.ts"],"version":"5.7.3"}
+{"root":["./src/populatedatainredis.ts","./src/redismanager.ts","./src/index.ts"],"version":"5.7.3"}

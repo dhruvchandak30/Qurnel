@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Redis_1 = require("./Redis");
+const RedisManager_1 = require("./RedisManager");
 const JOB_TYPES = [
     'email-send',
     'sms-send',
@@ -32,7 +32,7 @@ const PopulateDataInRedis = () => {
     const high = Array.from({ length: randomInt(5, 15) }, () => generatePayload('HIGH'));
     const medium = Array.from({ length: randomInt(5, 15) }, () => generatePayload('MEDIUM'));
     const low = Array.from({ length: randomInt(5, 15) }, () => generatePayload('LOW'));
-    const redis = new Redis_1.RedisManager();
+    const redis = new RedisManager_1.RedisManager();
     for (let i = 0; i < high.length; i++) {
         redis.push('HIGH', high[i]);
     }

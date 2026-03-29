@@ -14,49 +14,32 @@ app.use(express.json());
 const server = createServer(app);
 
 const io = new Server(server, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-    },
+    cors: { origin: '*', methods: ['GET', 'POST'] },
 });
-
-let ws = null;
 
 io.on('connection', (socket) => {
     console.log('User Connected', socket.id);
-    ws = socket;
 
     socket.on('message', async (data) => {
-        const { type, message } = data;
+        const { type } = data;
 
         switch (type) {
             case 'start-working':
-                InitWorkers()
-                send(
-                    socket,
-                    'populate-data-response',
-                    'Populated Data in Redis Queues',
-                );
-                break;
-            case 'get-updates':
-                break;
+                InitWorkers(io)
+                send(socket, 'start-working-response', 'Workers Started')
+                break
             default:
-                send;
-                break;
+                break
         }
     });
 });
 
 const send = (ws: Socket, type: string, message: string) => {
-    const msg = {
-        type,
-        message,
-    };
-
-    ws.emit('message', msg);
+    ws.emit('message', { type, message });
 };
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-    console.log(`WS Worker running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
+    InitWorkers(io)
 });
