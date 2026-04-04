@@ -11,14 +11,13 @@ const startWorker = async () => {
     try {
         while (true) {
             const job = await redis.pop();
-            // ✅ No jobs → exit cleanly
             if (!job) {
                 console.log(`[${workerId}] No jobs left. Exiting...`);
                 process.send?.({
                     event: 'worker:idle',
                     workerId,
                 });
-                process.exit(0); // normal exit
+                process.exit(0);
             }
             console.log(`[${workerId}] Picked job → type: ${job.jobType} | priority: ${job.priority}`);
             process.send?.({
@@ -42,7 +41,7 @@ const startWorker = async () => {
             workerId,
             error: String(err),
         });
-        process.exit(1); // crash exit
+        process.exit(1);
     }
 };
 startWorker();

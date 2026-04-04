@@ -2,15 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RedisManager = void 0;
 const redis_1 = require("@upstash/redis");
-const JOB_TYPES = [
-    'email-send',
-    'sms-send',
-    'report-gen',
-    'image-resize',
-    'data-export',
-    'invoice-gen',
-    'notification-push',
-];
 class RedisManager {
     redis;
     constructor() {

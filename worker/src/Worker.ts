@@ -4,61 +4,56 @@ const redis = new RedisManager();
 const workerId = `worker-${process.pid}`;
 
 const processJob = async (job: any) => {
-  await new Promise((r) => setTimeout(r, job.timeToProcess));
+    await new Promise((r) => setTimeout(r, job.timeToProcess));
 };
 
 const startWorker = async () => {
-  console.log(`[${workerId}] Started`);
+    console.log(`[${workerId}] Started`);
 
-  try {
-    while (true) {
-      const job = await redis.pop();
+    try {
+        while (true) {
+            const job = await redis.pop();
 
-      // ✅ No jobs → exit cleanly
-      if (!job) {
-        console.log(`[${workerId}] No jobs left. Exiting...`);
+            if (!job) {
+                console.log(`[${workerId}] No jobs left. Exiting...`);
+
+                process.send?.({
+                    event: 'worker:idle',
+                    workerId,
+                });
+
+                process.exit(0);
+            }
+
+            console.log(`[${workerId}] Picked job → type: ${job.jobType} | priority: ${job.priority}`);
+
+            process.send?.({
+                event: 'job:started',
+                job,
+                workerId,
+            });
+
+            await processJob(job);
+
+            console.log(`[${workerId}] Completed job → type: ${job.jobType}`);
+
+            process.send?.({
+                event: 'job:completed',
+                job,
+                workerId,
+            });
+        }
+    } catch (err) {
+        console.error(`[${workerId}] Error:`, err);
 
         process.send?.({
-          event: 'worker:idle',
-          workerId,
+            event: 'worker:error',
+            workerId,
+            error: String(err),
         });
 
-        process.exit(0); // normal exit
-      }
-
-      console.log(
-        `[${workerId}] Picked job → type: ${job.jobType} | priority: ${job.priority}`
-      );
-
-      process.send?.({
-        event: 'job:started',
-        job,
-        workerId,
-      });
-
-      await processJob(job);
-
-      console.log(
-        `[${workerId}] Completed job → type: ${job.jobType}`
-      );
-
-      process.send?.({
-        event: 'job:completed',
-        job,
-        workerId,
-      });
+        process.exit(1);
     }
-  } catch (err) {
-    console.error(`[${workerId}] Error:`, err);
-
-    process.send?.({
-      event: 'worker:error',
-      workerId,
-      error: String(err),
-    });
-
-    process.exit(1); // crash exit
-  }
 };
 
 startWorker();

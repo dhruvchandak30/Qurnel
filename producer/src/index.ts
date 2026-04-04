@@ -28,10 +28,13 @@ io.on('connection', (socket: Socket) => {
 
         switch (type) {
             case 'populate-data':
-                console.log('Populate Data Message Type triggered');
+                console.log('Populate Data triggered');
                 await PopulateDataInRedis();
-            
-                send(socket,"populate-data-response", "Data populated in Redis");
+                send(
+                    socket,
+                    'populate-data-response',
+                    'Data populated in Redis',
+                );
                 break;
 
             default:

@@ -2,16 +2,6 @@ import { Redis } from '@upstash/redis';
 
 type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
 
-const JOB_TYPES = [
-    'email-send',
-    'sms-send',
-    'report-gen',
-    'image-resize',
-    'data-export',
-    'invoice-gen',
-    'notification-push',
-];
-
 interface Payload {
     priority: Priority;
     timeToProcess: number;
@@ -49,9 +39,9 @@ export class RedisManager {
     }
 
     async getAllLengths() {
-        const high   = await this.redis.llen('queue:high')
-        const medium = await this.redis.llen('queue:medium')
-        const low    = await this.redis.llen('queue:low')
-        return { high, medium, low }
+        const high = await this.redis.llen('queue:high');
+        const medium = await this.redis.llen('queue:medium');
+        const low = await this.redis.llen('queue:low');
+        return { high, medium, low };
     }
 }

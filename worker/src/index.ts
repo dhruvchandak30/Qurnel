@@ -6,6 +6,7 @@ dotenv.config();
 import { Server, Socket } from 'socket.io';
 import { createServer } from 'http';
 import InitWorkers from './InitWorkers';
+import { RedisManager } from './RedisManager';
 
 const app = express();
 app.use(cors());
@@ -15,6 +16,12 @@ const server = createServer(app);
 
 const io = new Server(server, {
     cors: { origin: '*' },
+});
+
+app.get('/queue-lengths', async (_req, res) => {
+    const redis = new RedisManager();
+    const lengths = await redis.getAllLengths();
+    res.json(lengths);
 });
 
 io.on('connection', (socket: Socket) => {
