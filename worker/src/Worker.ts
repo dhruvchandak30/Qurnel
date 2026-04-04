@@ -4,28 +4,61 @@ const redis = new RedisManager();
 const workerId = `worker-${process.pid}`;
 
 const processJob = async (job: any) => {
-    await new Promise(r => setTimeout(r, job.timeToProcess));
+  await new Promise((r) => setTimeout(r, job.timeToProcess));
 };
 
 const startWorker = async () => {
-    console.log(`[${workerId}] Started`);
-    
-    while (true) {
-        const job = await redis.pop();
+  console.log(`[${workerId}] Started`);
 
-        if (job) {
-            console.log(`[${workerId}] Picked up job → type: ${job.jobType} | priority: ${job.priority}`);
-            process.send?.({ event: 'job:started', job, workerId });
-            
-            await processJob(job);
-            
-            console.log(`[${workerId}] Completed job → type: ${job.jobType} | took: ${job.timeToProcess}ms`);
-            process.send?.({ event: 'job:completed', job, workerId });
-        } else {
-            console.log(`[${workerId}] No jobs found, polling again in 1s...`);
-            await new Promise(r => setTimeout(r, 1000));
-        }
+  try {
+    while (true) {
+      const job = await redis.pop();
+
+      // ✅ No jobs → exit cleanly
+      if (!job) {
+        console.log(`[${workerId}] No jobs left. Exiting...`);
+
+        process.send?.({
+          event: 'worker:idle',
+          workerId,
+        });
+
+        process.exit(0); // normal exit
+      }
+
+      console.log(
+        `[${workerId}] Picked job → type: ${job.jobType} | priority: ${job.priority}`
+      );
+
+      process.send?.({
+        event: 'job:started',
+        job,
+        workerId,
+      });
+
+      await processJob(job);
+
+      console.log(
+        `[${workerId}] Completed job → type: ${job.jobType}`
+      );
+
+      process.send?.({
+        event: 'job:completed',
+        job,
+        workerId,
+      });
     }
+  } catch (err) {
+    console.error(`[${workerId}] Error:`, err);
+
+    process.send?.({
+      event: 'worker:error',
+      workerId,
+      error: String(err),
+    });
+
+    process.exit(1); // crash exit
+  }
 };
 
 startWorker();

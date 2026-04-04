@@ -14,32 +14,32 @@ app.use(express.json());
 const server = createServer(app);
 
 const io = new Server(server, {
-    cors: { origin: '*', methods: ['GET', 'POST'] },
+    cors: { origin: '*' },
 });
 
-io.on('connection', (socket) => {
-    console.log('User Connected', socket.id);
+io.on('connection', (socket: Socket) => {
+    console.log('Worker Client Connected:', socket.id);
 
     socket.on('message', async (data) => {
         const { type } = data;
 
         switch (type) {
             case 'start-working':
-                InitWorkers(io)
-                send(socket, 'start-working-response', 'Workers Started')
-                break
+                send(socket, 'start-working-response', 'Workers Started');
+                InitWorkers(io);
+                break;
+
             default:
-                break
+                break;
         }
     });
 });
 
-const send = (ws: Socket, type: string, message: string) => {
-    ws.emit('message', { type, message });
+const send = (socket: Socket, type: string, message: string) => {
+    socket.emit('message', { type, message });
 };
 
-const PORT = process.env.PORT || 3001;
+const PORT = 3001;
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    InitWorkers(io)
+    console.log(`Worker server running on port ${PORT}`);
 });

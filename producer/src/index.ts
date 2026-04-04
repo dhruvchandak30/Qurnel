@@ -16,48 +16,35 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: '*',
-        methods: ['GET', 'POST'],
     },
 });
 
-let ws = null;
-
-io.on('connection', (socket) => {
-    console.log('User Connected', socket.id);
-    ws = socket;
+io.on('connection', (socket: Socket) => {
+    console.log('Producer Client Connected:', socket.id);
 
     socket.on('message', async (data) => {
-        const { type, message } = data;
+        const { type } = data;
+        console.log('Got Message', data);
 
         switch (type) {
             case 'populate-data':
+                console.log('Populate Data Message Type triggered');
                 await PopulateDataInRedis();
-                send(
-                    socket,
-                    'populate-data-response',
-                    'Populated Data in Redis Queues',
-                );
+            
+                send(socket,"populate-data-response", "Data populated in Redis");
                 break;
-            case 'get-updates':
-                break;
+
             default:
-                send;
                 break;
         }
     });
 });
 
-const send = (ws: Socket, type: string, message: string) => {
-    const msg = {
-        type,
-        message,
-    };
-
-    ws.emit('message', msg);
+const send = (socket: Socket, type: string, message: string) => {
+    socket.emit('message', { type, message });
 };
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 server.listen(PORT, () => {
-    console.log(`WS Server running on port ${PORT}`);
-    PopulateDataInRedis()
+    console.log(`Producer running on port ${PORT}`);
 });

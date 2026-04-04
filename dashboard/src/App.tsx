@@ -1,121 +1,107 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { io, Socket } from 'socket.io-client';
+import './App.css';
+import toast from 'react-hot-toast';
+import { useEffect, useRef } from 'react';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const workerSocketRef = useRef<Socket | null>(null);
+  const producerSocketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    const workerSocket = io("http://localhost:3001", {
+      transports: ["websocket"],
+    });
+
+    const producerSocket = io("http://localhost:3000", {
+      transports: ["websocket"],
+    });
+    workerSocketRef.current = workerSocket;
+    producerSocketRef.current = producerSocket;
+
+    // Connections
+    workerSocket.on("connect", () => {
+      toast.success("Connected to Worker Socket");
+    });
+
+    producerSocket.on("connect", () => {
+      toast.success("Connected to Producer Socket");
+    });
+
+    // Messages
+    producerSocket.on("message", (data) => {
+      console.log("Got Message", data);
+      if (data.type === "populate-data-response") {
+        toast.success(data.message);
+      }
+    });
+
+    workerSocket.on("message", (data) => {
+      console.log("Got Message", data);
+      if (data.type === "start-working-response") {
+        toast.success(data.message);
+      }
+    });
+
+
+    return () => {
+      workerSocket.disconnect();
+      producerSocket.disconnect();
+    };
+  }, []);
+
+  const handlePopulationData = () => {
+    console.log("BUTTON CLICKED");
+
+    if (!producerSocketRef.current) {
+      console.log("Producer socket NOT READY");
+      return;
+    }
+
+    console.log("Emitting event...");
+
+    producerSocketRef.current.emit('message', {
+      type: 'populate-data',
+    });
+
+    toast.success("Event emitted");
+  };
+
+  const handleStartWorkers = () => {
+    console.log("BUTTON CLICKED");
+
+    if (!workerSocketRef.current) {
+      console.log("Producer socket NOT READY");
+      return;
+    }
+
+    console.log("Emitting event...");
+
+    workerSocketRef.current.emit('message', {
+      type: 'start-working',
+    });
+
+    toast.success("Event emitted");
+  }
+
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
+    <div className='bg-black h-screen text-white'>
+      <div>
         <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          className='cursor-pointer border-2 p-4 m-4'
+          onClick={handlePopulationData}
         >
-          Count is {count}
+          Start Producer
         </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        <button
+          className='cursor-pointer border-2 p-4 m-4'
+          onClick={handleStartWorkers}
+        >
+          Start Worker
+        </button>
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
